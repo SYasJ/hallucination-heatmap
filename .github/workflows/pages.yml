@@ -21,7 +21,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Publish only the static front end. The demo library runs fully in the browser;
       # live analysis still requires running server.py locally.
       - name: Assemble site

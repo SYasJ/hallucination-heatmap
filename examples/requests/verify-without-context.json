@@ -1,0 +1,5 @@
+{
+  "prompt": "Audit the factual claims in this answer.",
+  "existing_response": "The Eiffel Tower was completed in 1889 and is about 330 metres tall.",
+  "mode": "verify"
+}

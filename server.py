@@ -7,6 +7,7 @@ import math
 import os
 import posixpath
 import re
+import threading
 import time
 import uuid
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -16,10 +17,38 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import unquote, urlsplit
 from urllib.request import Request, urlopen
 
+__version__ = "0.2.0"
+
 ROOT = Path(__file__).resolve().parent
 MAX_BODY_BYTES = 2_000_000
 DEFAULT_BASE_URL = "https://api.openai.com/v1"
 DEFAULT_MODEL = "gpt-4o-mini"
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 8787
+
+# Only these files are ever served. Everything else (server.py, .env, tests,
+# tools, .git, directory listings) is a 404, so a misplaced secret is never exposed.
+PUBLIC_FILES = {
+    "/index.html",
+    "/styles.css",
+    "/app.js",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/site.webmanifest",
+    "/favicon.ico",
+}
+PUBLIC_DIRS = ("/assets/", "/screenshots/")
+PUBLIC_SUFFIXES = {".png", ".svg", ".ico", ".webp", ".jpg", ".jpeg"}
+
+# Host-header allowlist for the API. Blocks DNS-rebinding attacks, where a
+# malicious site resolves its own hostname to 127.0.0.1 to reach this server.
+LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "[::1]", "::1"}
+
+CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; "
+    "connect-src 'self'; font-src 'self'; manifest-src 'self'; object-src 'none'; "
+    "base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+)
 
 
 def load_dotenv() -> None:
@@ -47,6 +76,57 @@ def env_value(*names: str, default: str = "") -> str:
         if value:
             return value.strip()
     return default
+
+
+def allowed_hosts() -> set[str]:
+    extra = {h.strip().lower() for h in env_value("ALLOWED_HOSTS").split(",") if h.strip()}
+    return LOCAL_HOSTNAMES | extra
+
+
+def allowed_extension_ids() -> set[str]:
+    """Optional allowlist of Chrome extension IDs. Empty means any extension origin."""
+    return {e.strip().lower() for e in env_value("ALLOWED_EXTENSION_IDS").split(",") if e.strip()}
+
+
+def host_without_port(host: str) -> str:
+    host = host.strip().lower()
+    if host.startswith("["):
+        end = host.find("]")
+        return host[: end + 1] if end > 0 else host
+    return host.rsplit(":", 1)[0] if host.count(":") == 1 else host
+
+
+class RateLimiter:
+    """Small per-client sliding-window limiter so a loop cannot drain provider credits."""
+
+    def __init__(self, limit: int, window_seconds: float = 60.0):
+        self.limit = limit
+        self.window = window_seconds
+        self._hits: dict[str, list[float]] = {}
+        self._lock = threading.Lock()
+
+    def allow(self, key: str) -> bool:
+        if self.limit <= 0:
+            return True
+        now = time.monotonic()
+        with self._lock:
+            hits = [t for t in self._hits.get(key, []) if now - t < self.window]
+            if len(hits) >= self.limit:
+                self._hits[key] = hits
+                return False
+            hits.append(now)
+            self._hits[key] = hits
+            return True
+
+
+def _int_env(name: str, default: int) -> int:
+    try:
+        return int(env_value(name, default=str(default)))
+    except ValueError:
+        return default
+
+
+RATE_LIMITER = RateLimiter(_int_env("RATE_LIMIT_PER_MINUTE", 30))
 
 
 def config() -> dict[str, Any]:
@@ -105,7 +185,7 @@ def provider_chat(
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "User-Agent": "hallucination-heatmap-local/0.1",
+            "User-Agent": f"hallucination-heatmap-local/{__version__}",
         },
     )
     try:
@@ -489,8 +569,13 @@ def analyze(payload: dict[str, Any]) -> tuple[dict[str, Any], int]:
 
 
 class HeatmapHandler(SimpleHTTPRequestHandler):
-    server_version = "HallucinationHeatmap/0.1"
+    server_version = f"HallucinationHeatmap/{__version__}"
+    sys_version = ""
+
+    def version_string(self) -> str:
+        return self.server_version
     directory = str(ROOT)
+    timeout = 30  # Drop idle/slow clients instead of holding a thread forever.
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, directory=self.directory, **kwargs)
@@ -502,12 +587,17 @@ class HeatmapHandler(SimpleHTTPRequestHandler):
         else:
             super().log_message(fmt, *args)
 
+    def _host_allowed(self) -> bool:
+        host = host_without_port(self.headers.get("Host", ""))
+        return bool(host) and host in allowed_hosts()
+
     def _origin_allowed(self) -> bool:
         origin = self.headers.get("Origin", "")
         if not origin:
             return False
         if origin.startswith("chrome-extension://"):
-            return True
+            ids = allowed_extension_ids()
+            return not ids or origin[len("chrome-extension://"):].strip("/").lower() in ids
         try:
             origin_host = urlsplit(origin).netloc.lower()
             request_host = self.headers.get("Host", "").lower()
@@ -517,43 +607,79 @@ class HeatmapHandler(SimpleHTTPRequestHandler):
 
     def end_headers(self) -> None:
         self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
         self.send_header("Referrer-Policy", "same-origin")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()")
+        self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+        self.send_header("Content-Security-Policy", CONTENT_SECURITY_POLICY)
         self.send_header("Cache-Control", "no-store" if self.path.startswith("/api/") else "no-cache")
         if self._origin_allowed():
             self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin", ""))
             self.send_header("Vary", "Origin")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Max-Age", "600")
         super().end_headers()
 
     def translate_path(self, path: str) -> str:
         parsed = urlsplit(path)
         request_path = "/" + posixpath.normpath(unquote(parsed.path)).lstrip("/")
-        if request_path in {"/.env", "/.git", "/.git/", "/server.py"} or request_path.startswith("/.git/"):
+        if request_path == "/":
+            request_path = "/index.html"
+        suffix = posixpath.splitext(request_path)[1].lower()
+        is_public = request_path in PUBLIC_FILES or (
+            request_path.startswith(PUBLIC_DIRS) and suffix in PUBLIC_SUFFIXES and "/." not in request_path
+        )
+        if not is_public:
             return str(ROOT / "__not_found__")
-        return super().translate_path(path)
+        return super().translate_path(request_path)
+
+    def list_directory(self, path: Any) -> None:  # Never expose directory listings.
+        self.send_error(404, "File not found")
+        return None
+
+    def _reject_api_request(self) -> bool:
+        """Return True (after responding) when an API request fails host/origin checks."""
+        if not self._host_allowed():
+            self.send_json({"error": "Host not allowed. Add it to ALLOWED_HOSTS to expose the API."}, 403)
+            return True
+        if self.headers.get("Origin") and not self._origin_allowed():
+            self.send_json({"error": "Cross-origin request blocked."}, 403)
+            return True
+        return False
 
     def do_OPTIONS(self) -> None:
+        if not self._host_allowed() or not self._origin_allowed():
+            self.send_response(403)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         self.send_response(204)
+        self.send_header("Content-Length", "0")
         self.end_headers()
 
     def do_GET(self) -> None:
         route = urlsplit(self.path).path
-        if route == "/api/health":
-            self.send_json({"ok": True, "service": "hallucination-heatmap", "version": "0.1"})
-            return
-        if route == "/api/config":
-            cfg = config()
-            self.send_json({
-                "configured": cfg["configured"],
-                "verifier_configured": cfg["verifier_configured"],
-                "model": cfg["model"],
-                "verifier_model": cfg["verifier_model"],
-                "base_url": _safe_base_url(cfg["base_url"]),
-                "verifier_base_url": _safe_base_url(cfg["verifier_base_url"]),
-                "logprobs_requested": True,
-                "demo_available": True,
-            })
+        if route.startswith("/api/"):
+            if self._reject_api_request():
+                return
+            if route == "/api/health":
+                self.send_json({"ok": True, "service": "hallucination-heatmap", "version": __version__})
+                return
+            if route == "/api/config":
+                cfg = config()
+                self.send_json({
+                    "configured": cfg["configured"],
+                    "verifier_configured": cfg["verifier_configured"],
+                    "model": cfg["model"],
+                    "verifier_model": cfg["verifier_model"],
+                    "base_url": _safe_base_url(cfg["base_url"]),
+                    "verifier_base_url": _safe_base_url(cfg["verifier_base_url"]),
+                    "logprobs_requested": True,
+                    "demo_available": True,
+                })
+                return
+            self.send_json({"error": "Not found."}, 404)
             return
         super().do_GET()
 
@@ -561,6 +687,17 @@ class HeatmapHandler(SimpleHTTPRequestHandler):
         route = urlsplit(self.path).path
         if route != "/api/analyze":
             self.send_json({"error": "Not found."}, 404)
+            return
+        if self._reject_api_request():
+            return
+        # Requiring JSON forces a CORS preflight, so other websites cannot fire
+        # "simple" text/plain or form posts that would spend provider credits.
+        content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+        if content_type != "application/json":
+            self.send_json({"error": "Content-Type must be application/json."}, 415)
+            return
+        if not RATE_LIMITER.allow(self.client_address[0]):
+            self.send_json({"error": "Rate limit exceeded. Try again in a minute."}, 429)
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
@@ -577,8 +714,8 @@ class HeatmapHandler(SimpleHTTPRequestHandler):
             payload = json.loads(body.decode("utf-8"))
             if not isinstance(payload, dict):
                 raise ValueError("Expected a JSON object.")
-        except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
-            self.send_json({"error": f"Invalid JSON request: {exc}"}, 400)
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
+            self.send_json({"error": "Invalid JSON request body."}, 400)
             return
         try:
             result, status = analyze(payload)
@@ -586,7 +723,8 @@ class HeatmapHandler(SimpleHTTPRequestHandler):
         except ProviderError as exc:
             self.send_json({"error": str(exc), "provider_status": exc.status}, exc.status if 400 <= exc.status < 600 else 502)
         except Exception as exc:  # Keep a local demo server recoverable on unexpected provider shapes.
-            self.send_json({"error": f"Analysis failed: {exc}"}, 500)
+            print(f"[heatmap] analysis failed: {type(exc).__name__}")
+            self.send_json({"error": "Analysis failed unexpectedly. Check the server log."}, 500)
 
     def send_json(self, payload: dict[str, Any], status: int = 200) -> None:
         raw = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -614,9 +752,13 @@ def _safe_base_url(value: str) -> str:
 
 
 def main() -> None:
-    port = int(os.environ.get("ANALYZER_PORT", os.environ.get("PORT", "8787")))
-    server = ThreadingHTTPServer(("0.0.0.0", port), HeatmapHandler)
-    print(f"Hallucination Heatmap is serving on http://0.0.0.0:{port}")
+    host = env_value("ANALYZER_HOST", "HOST", default=DEFAULT_HOST)
+    port = _int_env("ANALYZER_PORT", _int_env("PORT", DEFAULT_PORT))
+    server = ThreadingHTTPServer((host, port), HeatmapHandler)
+    display_host = "localhost" if host in {"127.0.0.1", "0.0.0.0", "::"} else host
+    print(f"Hallucination Heatmap v{__version__} is serving on http://{display_host}:{port}")
+    if host not in {"127.0.0.1", "localhost", "::1"}:
+        print("WARNING: listening beyond localhost. The API has no authentication; keep it on a trusted network.")
     print("Demo mode works without an API key. For live analysis, configure .env and restart.")
     try:
         server.serve_forever()

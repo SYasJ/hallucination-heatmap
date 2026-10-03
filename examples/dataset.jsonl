@@ -1,0 +1,3 @@
+{"id": "returns-used-item", "prompt": "Can I return a used blender after 60 days?", "context": "Unused products in original packaging may be returned within 30 days of delivery."}
+{"id": "apollo-grounded", "prompt": "When did Apollo 11 land and who stepped out first?", "context": "Apollo 11 landed on the Moon on July 20, 1969. Neil Armstrong stepped out first."}
+{"id": "pasted-spec-drift", "prompt": "Summarize the charging specs.", "context": "A 10-minute charge provides about 3 hours of playback. Wireless charging: not supported.", "response": "A 10-minute charge gives about 5 hours of playback. It supports Qi wireless charging."}

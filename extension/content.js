@@ -12,9 +12,8 @@
   const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const statusText = (status) => {
     const normalized = String(status || 'unverified').toLowerCase().replace(/[ -]/g, '_');
-    if (normalized === 'supported' || normalized === 'entailed') return 'Supported';
-    if (normalized === 'contradicted' || normalized === 'refuted') return 'Contradicted';
-    if (normalized === 'not_in_context' || normalized === 'unsupported') return 'Unverified';
+    if (['supported', 'entailed', 'grounded', 'verified'].includes(normalized)) return 'Supported';
+    if (['contradicted', 'refuted', 'conflicts', 'false'].includes(normalized)) return 'Contradicted';
     return 'Unverified';
   };
   const statusClass = (status) => statusText(status).toLowerCase().replace(/\s/g, '-');
@@ -123,8 +122,9 @@
     const scoreMeta = hasSource ? 'source context score' : 'no source attached';
     const claimHTML = claims.slice(0, 5).map((claim) => {
       const status = statusText(claim.status || claim.verdict);
-      const confidence = claim.confidence === null || claim.confidence === undefined ? '' : `<small class="claim-confidence">${Math.round(Number(claim.confidence) * (Number(claim.confidence) <= 1 ? 100 : 1))}% estimate</small>`;
-      return `<div class="claim ${statusClass(claim.status || claim.verdict)}"><span class="claim-mark">${status === 'Supported' ? '✓' : status === 'Contradicted' ? '!' : '?'}</span><div><strong>${escapeHTML(claim.claim || claim.text || 'Claim')}</strong><small>${escapeHTML(claim.evidence || claim.evidence_quote || 'No supporting quote returned.')}</small>${confidence}</div><em>${status}</em></div>`;
+      const confValue = Number(claim.confidence);
+      const confidence = claim.confidence === null || claim.confidence === undefined || !Number.isFinite(confValue) ? '' : `<small class="claim-confidence">${Math.round(confValue * (confValue <= 1 ? 100 : 1))}% estimate</small>`;
+      return `<div class="claim ${statusClass(claim.status || claim.verdict)}"><span class="claim-mark">${status === 'Supported' ? '✓' : status === 'Contradicted' ? '!' : '?'}</span><div><strong>${escapeHTML(claim.claim || claim.text || 'Claim')}</strong><small>${escapeHTML(claim.evidence || claim.evidence_quote || 'No supporting quote returned.')}</small>${confidence}</div><em>${escapeHTML(status)}</em></div>`;
     }).join('');
     const title = loading ? 'Checking response…' : error ? 'Analyzer unavailable' : 'Response review';
     const body = loading
@@ -209,8 +209,8 @@
     if (!window.CSS || !CSS.highlights || typeof Highlight === 'undefined') return;
     const groups = { contradicted: [], unverified: [], supported: [] };
     claims.forEach((claim) => {
-      const status = String(claim.status || claim.verdict || 'unverified').toLowerCase();
-      const key = status.includes('contrad') || status.includes('refut') ? 'contradicted' : status.includes('support') || status.includes('entail') ? 'supported' : 'unverified';
+      const label = statusText(claim.status || claim.verdict);
+      const key = label === 'Contradicted' ? 'contradicted' : label === 'Supported' ? 'supported' : 'unverified';
       const range = makeRangeForText(messageNode, claim.text_span || claim.span || '');
       if (range) groups[key].push(range);
     });

@@ -37,9 +37,9 @@
         ['The ', .99], ['program ', .96], ['also ', .97], ['improved ', .96], ['mobility ', .91], ['by ', .98], ['22%, ', .19], ['proving ', .63], ['it ', .99], ['prevents ', .75], ['falls ', .84], ['in ', .99], ['older ', .88], ['adults. ', .95]
       ].map(([token, confidence]) => ({ token, confidence, logprob: Math.log(confidence) })),
       claims: [
-        { claim: 'The study was a 2023 Stanford trial of 2,400 patients.', status: 'unverified', evidence: 'The supplied summary describes a 240-adult pilot and does not name Stanford.' },
-        { claim: 'The program reduced falls by 37% and improved mobility by 22%.', status: 'unverified', evidence: 'No exact effect size or fall-rate reduction is reported in the source.' },
-        { claim: 'The program proves it prevents falls in older adults.', status: 'unverified', evidence: 'The source reports self-reported change from baseline; it does not establish causation.' }
+        { claim: 'The study was a 2023 Stanford trial of 2,400 patients.', status: 'contradicted', evidence: 'The supplied summary describes a 240-adult pilot and explicitly does not report a Stanford affiliation.' },
+        { claim: 'The program reduced falls by 37% and improved mobility by 22%.', status: 'not_in_context', evidence: 'No exact effect size or fall-rate reduction is reported in the source.' },
+        { claim: 'The program proves it prevents falls in older adults.', status: 'not_in_context', evidence: 'The source reports self-reported change from baseline; it does not establish causation.' }
       ],
       preferredToken: '37%'
     },
@@ -62,6 +62,47 @@
         { claim: 'Neil Armstrong stepped onto the surface first; Buzz Aldrin followed.', status: 'supported', evidence: '“Neil Armstrong was the first astronaut … Buzz Aldrin followed.”' }
       ],
       preferredToken: '1969.'
+    },
+    citation: {
+      id: 'citation',
+      label: 'Fabricated citation',
+      query: 'Which court case established the duty-to-warn rule in this memo? Cite it.',
+      context: 'INTERNAL LEGAL MEMO · DRAFT\nThe duty-to-warn principle discussed in this memo comes from Tarasoff v. Regents of the University of California (Cal. 1976). The memo cites no other authority and does not discuss federal appellate decisions.',
+      sourceLabel: '1 source · legal memo',
+      model: 'DEMO MODEL',
+      method: 'Token logprobs + evidence check',
+      latency: 365,
+      evidence_score: 34,
+      tokens: [
+        ['The ', .99], ['rule ', .95], ['comes ', .93], ['from ', .99], ['Tarasoff ', .97], ['v. ', .99], ['Regents ', .98], ['(1976), ', .91],
+        ['later ', .58], ['affirmed ', .41], ['in ', .97], ['Henderson ', .12], ['v. ', .96], ['Mercy ', .09], ['Health, ', .22], ['982 ', .07], ['F.3d ', .31], ['411 ', .06], ['(9th ', .44], ['Cir. ', .93], ['2011). ', .29]
+      ].map(([token, confidence]) => ({ token, confidence, logprob: Math.log(confidence) })),
+      claims: [
+        { claim: 'The duty-to-warn rule comes from Tarasoff v. Regents (1976).', status: 'supported', evidence: '“…comes from Tarasoff v. Regents of the University of California (Cal. 1976).”' },
+        { claim: 'The rule was affirmed in Henderson v. Mercy Health, 982 F.3d 411 (9th Cir. 2011).', status: 'not_in_context', evidence: 'The memo cites no other authority and does not discuss federal appellate decisions. Verify any citation in a legal database before use.' }
+      ],
+      preferredToken: 'Mercy'
+    },
+    specs: {
+      id: 'specs',
+      label: 'Spec drift',
+      query: 'Summarize the battery life and charging specs for the X200 headphones.',
+      context: 'PRODUCT SHEET · X200 WIRELESS HEADPHONES\nBattery life: up to 30 hours with ANC off, 22 hours with ANC on.\nCharging: USB-C. A 10-minute charge provides about 3 hours of playback.\nWireless charging: not supported.',
+      sourceLabel: '1 source · product sheet',
+      model: 'DEMO MODEL',
+      method: 'Token logprobs + evidence check',
+      latency: 298,
+      evidence_score: 52,
+      tokens: [
+        ['The ', .99], ['X200 ', .98], ['lasts ', .95], ['up ', .99], ['to ', .99], ['30 ', .94], ['hours ', .99], ['with ', .97], ['ANC ', .96], ['off ', .95], ['and ', .97], ['22 ', .9], ['hours ', .99], ['with ', .98], ['ANC ', .97], ['on. ', .96],
+        ['A ', .97], ['10-minute ', .93], ['USB-C ', .88], ['charge ', .97], ['gives ', .9], ['about ', .93], ['5 ', .36], ['hours, ', .7], ['and ', .95], ['it ', .96], ['supports ', .62], ['Qi ', .31], ['wireless ', .87], ['charging. ', .92]
+      ].map(([token, confidence]) => ({ token, confidence, logprob: Math.log(confidence) })),
+      claims: [
+        { claim: 'Battery life is up to 30 hours with ANC off and 22 hours with ANC on.', status: 'supported', evidence: '“Battery life: up to 30 hours with ANC off, 22 hours with ANC on.”' },
+        { claim: 'A 10-minute charge gives about 5 hours of playback.', status: 'contradicted', evidence: 'The sheet says a 10-minute charge provides about 3 hours.' },
+        { claim: 'The headphones support Qi wireless charging.', status: 'contradicted', evidence: '“Wireless charging: not supported.”' }
+      ],
+      preferredToken: '5'
     }
   };
 
@@ -103,9 +144,9 @@
 
   function normalizeStatus(status) {
     const value = String(status || '').toLowerCase().replace(/[ -]/g, '_');
-    if (['supported', 'entailed', 'grounded'].includes(value)) return 'supported';
-    if (['contradicted', 'refuted', 'conflicts'].includes(value)) return 'contradicted';
-    if (['not_in_context', 'not_in_source', 'unsupported', 'not_supported'].includes(value)) return 'not_in_context';
+    if (['supported', 'entailed', 'grounded', 'verified'].includes(value)) return 'supported';
+    if (['contradicted', 'refuted', 'conflicts', 'false'].includes(value)) return 'contradicted';
+    if (['not_in_context', 'not_in_source', 'unsupported', 'not_supported', 'missing'].includes(value)) return 'not_in_context';
     return 'unverified';
   }
 
@@ -159,6 +200,7 @@
       const active = button.dataset.example === id;
       button.classList.toggle('active', active);
       button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
     });
     const ex = examples[id];
     $('questionInput').value = ex.query;
@@ -180,8 +222,14 @@
     const modeStatus = $('modeStatus');
     modeStatus.classList.remove('is-offline');
     if (mode === 'demo') {
-      hint.innerHTML = '<span class="hint-dot"></span><span>Explore three annotated examples. No API key required.</span>';
+      hint.innerHTML = `<span class="hint-dot"></span><span>Explore ${Object.keys(examples).length} annotated examples. No API key required.</span>`;
       modeStatus.innerHTML = '<span class="mode-status-dot"></span><span>Curated demo</span>';
+      return;
+    }
+    if (!state.backend.available) {
+      hint.innerHTML = '<span class="hint-dot"></span><span>Live modes need the local server: run <code>python3 server.py</code> and open http://localhost:8787.</span>';
+      modeStatus.innerHTML = '<span class="mode-status-dot"></span><span>Local server offline</span>';
+      modeStatus.classList.add('is-offline');
       return;
     }
     if (mode === 'logprobs') {
@@ -209,8 +257,8 @@
 
   async function checkBackend() {
     try {
-      const response = await fetch('/api/config', { cache: 'no-store' });
-      if (!response.ok) throw new Error('API is not available');
+      const response = await fetch('api/config', { cache: 'no-store', headers: { Accept: 'application/json' } });
+      if (!response.ok || !(response.headers.get('Content-Type') || '').includes('application/json')) throw new Error('API is not available');
       const info = await response.json();
       state.backend = {
         available: true,
@@ -326,7 +374,7 @@
     if (isVerifier) {
       $('confidenceLegend').innerHTML = '<span class="legend-title">CLAIM SUPPORT</span><span class="legend-item"><i class="legend-swatch low"></i>Contradicted</span><span class="legend-item"><i class="legend-swatch medium"></i>Unverified</span><span class="legend-item"><i class="legend-swatch high"></i>Supported</span><span class="legend-help">Verifier estimate · not logprobs</span>';
     } else {
-      $('confidenceLegend').innerHTML = '<span class="legend-title">CONFIDENCE</span><span class="legend-item"><i class="legend-swatch low"></i>Low <b>&lt;55%</b></span><span class="legend-item"><i class="legend-swatch medium"></i>Mixed <b>55–84%</b></span><span class="legend-item"><i class="legend-swatch high"></i>High <b>≥85%</b></span><span class="legend-help">Hover or click a word</span>';
+      $('confidenceLegend').innerHTML = '<span class="legend-title">CONFIDENCE</span><span class="legend-item"><i class="legend-swatch low"></i>Low <b>&lt;55%</b></span><span class="legend-item"><i class="legend-swatch medium"></i>Mixed <b>55–84%</b></span><span class="legend-item"><i class="legend-swatch high"></i>High <b>≥85%</b></span><span class="legend-help">Hover, click, or use ← → keys</span>';
     }
     const subtitle = isVerifier
       ? 'Verifier-estimated claim support · not token probabilities.'
@@ -463,11 +511,21 @@
       $('inspectorLogprob').textContent = '—';
       $('inspectorIcon').textContent = isVerifier ? (normalizeStatus(status) === 'supported' ? '✓' : normalizeStatus(status) === 'contradicted' ? '!' : '?') : 'Aa';
     }
+    $('responseText').querySelectorAll('.heat-token').forEach((span) => span.classList.toggle('selected', Number(span.dataset.tokenIndex) === bounded));
     if (markSelected) {
-      $('responseText').querySelectorAll('.heat-token').forEach((span) => span.classList.toggle('selected', Number(span.dataset.tokenIndex) === bounded));
-    } else {
-      $('responseText').querySelectorAll('.heat-token').forEach((span) => span.classList.toggle('selected', Number(span.dataset.tokenIndex) === bounded));
+      $('responseText').querySelector('.heat-token.selected')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     }
+  }
+
+  function moveTokenSelection(step) {
+    const tokens = state.displayTokens || [];
+    let index = state.selectedTokenIndex;
+    for (let i = 0; i < tokens.length; i += 1) {
+      index += step;
+      if (index < 0 || index >= tokens.length) return;
+      if (!/^\s*$/.test(String(tokens[index].token || ''))) break;
+    }
+    selectToken(index, true);
   }
 
   function findClaimForToken(token, claims) {
@@ -525,7 +583,7 @@
     const question = $('questionInput').value.trim();
     const context = $('contextInput').value.trim();
     const existing = $('existingResponseInput').value.trim();
-    if (!question) { toast('Add a question or task first.', true); $('questionInput').focus(); return; }
+    if (!question && !(existing && mode !== 'demo')) { toast('Add a question or task first.', true); $('questionInput').focus(); return; }
     if (mode === 'demo') {
       const ex = currentExample();
       if (question !== ex.query || context !== ex.context) {
@@ -535,6 +593,11 @@
       state.result = cloneExample(state.activeExample);
       renderResult(state.result);
       toast('Curated example reloaded. This is not a live model call.');
+      return;
+    }
+    if (!state.backend.available) {
+      openModal('settings');
+      toast('Live modes need the local server. Run python3 server.py, then open http://localhost:8787.', true);
       return;
     }
     const missingCredentials = existing
@@ -552,7 +615,7 @@
     button.classList.add('loading');
     button.querySelector('span').textContent = 'Analyzing…';
     try {
-      const response = await fetch('/api/analyze', {
+      const response = await fetch('api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: question, context, mode: actualMode, existing_response: existing })
@@ -628,6 +691,7 @@
       output: result.output || '',
       claims: (result.claims || []).map((claim) => ({
         claim: claim.claim || claim.text || '',
+        text_span: claim.text_span || null,
         verdict: normalizeStatus(claim.status || claim.verdict),
         verifier_confidence: safeNumber(claim.confidence),
         evidence: claim.evidence || claim.evidence_quote || null
@@ -665,7 +729,12 @@
       const verifierDetail = verifierConnected ? `Verifier: ${escapeHTML(state.backend.verifierModel || 'configured')} · ${escapeHTML(state.backend.verifierBaseUrl || state.backend.baseUrl || 'endpoint configured')}` : 'Verifier: not configured';
       const connectionSummary = `${generationDetail} · ${verifierDetail}`;
       html = `<p class="modal-lead">Connect an OpenAI-compatible chat completions endpoint from the local server. The browser never receives your provider API key.</p>
-        <div class="setting-status ${anyConnection ? 'connected' : ''}"><i class="setting-status-dot"></i><div><strong>${connected ? 'Generation provider detected' : verifierConnected ? 'Verifier-only connection detected' : 'Demo mode is ready; no API key detected'}</strong><small>${anyConnection ? connectionSummary : 'Add your credentials to .env, then restart server.py.'}</small></div></div>
+        <div class="setting-status ${anyConnection ? 'connected' : ''}"><i class="setting-status-dot"></i><div><strong>${!state.backend.available ? 'Local server not detected' : connected ? 'Generation provider detected' : verifierConnected ? 'Verifier-only connection detected' : 'Demo mode is ready; no API key detected'}</strong><small>${!state.backend.available ? 'This page is running as a static demo. Clone the repo and run python3 server.py to enable live analysis.' : anyConnection ? connectionSummary : 'Add your credentials to .env, then restart server.py.'}</small></div></div>
+        <h3 class="modal-section-title">Quick start</h3>
+        <div class="modal-code">git clone https://github.com/SYasJ/hallucination-heatmap.git
+cd hallucination-heatmap
+cp .env.example .env   <span class="code-muted"># add your key</span>
+python3 server.py      <span class="code-muted"># → http://localhost:8787</span></div>
         <h3 class="modal-section-title">Local configuration</h3>
         <div class="modal-code">LLM_BASE_URL=https://api.openai.com/v1
 LLM_API_KEY=your-key-here
@@ -688,7 +757,16 @@ VERIFIER_MODEL=your-verifier-model</div>
   }'</div>
         <div class="modal-callout"><span>↳</span><div><strong>RAG handoff:</strong> the downloadable JSON includes <code>trust_score</code>, <code>evidence_alignment</code>, <code>mean_token_confidence</code>, claim verdicts, token logprobs, and a caveat. Scores are heuristic; set your own thresholds and review policy.</div></div>
         <h3 class="modal-section-title">Response modes</h3>
-        <div class="modal-example-steps"><b>1</b><div><strong>logprobs</strong> — requests selected-token log probabilities from compatible chat completions APIs.</div><b>2</b><div><strong>verify</strong> — generates (or accepts pasted output) and makes a separate claim-support pass. Highlights are verifier estimates, not token probabilities.</div><b>3</b><div><strong>demo</strong> — three fixed, annotated examples; no network request and no generated data.</div></div>`;
+        <div class="modal-example-steps"><b>1</b><div><strong>logprobs</strong> — requests selected-token log probabilities from compatible chat completions APIs.</div><b>2</b><div><strong>verify</strong> — generates (or accepts pasted output) and makes a separate claim-support pass. Highlights are verifier estimates, not token probabilities.</div><b>3</b><div><strong>demo</strong> — five fixed, annotated examples; no network request and no generated data.</div></div>
+        <h3 class="modal-section-title">Python client</h3>
+        <div class="modal-code">from heatmap_client import HeatmapClient
+
+run = HeatmapClient().analyze(
+    "Can I return this after 60 days?",
+    context="Unused items: 30-day return window.",
+)
+print(run["trust_score"], run["claims"])</div>
+        <div class="modal-callout"><span>↳</span><div><strong>More examples:</strong> see the <code>examples/</code> folder for a RAG gate, batch evaluation to CSV, and an offline mock provider.</div></div>`;
     } else if (section === 'extension') {
       title.textContent = 'Browser extension · local MVP';
       html = `<p class="modal-lead">A Manifest V3 prototype adds an “Analyze answer” action to assistant messages on ChatGPT and Claude. It sends text only after you click; it does not monitor or upload conversations automatically.</p>
@@ -704,9 +782,10 @@ Permissions: chatgpt.com, claude.ai, local analyzer only</div>`;
     } else if (section === 'context') {
       title.textContent = 'Source context used';
       const context = state.result?.context || $('contextInput').value || 'No source context provided.';
-      html = `<p class="modal-lead">The exact context submitted for this result:</p><div class="modal-code" style="white-space:pre-wrap;font-family:inherit;font-size:10px">${escapeHTML(context)}</div>`;
+      html = `<p class="modal-lead">The exact context submitted for this result:</p><div class="modal-code modal-code-prose">${escapeHTML(context)}</div>`;
     }
     content.innerHTML = html;
+    if (!$('modalBackdrop').classList.contains('open')) state.lastFocus = document.activeElement;
     $('modalBackdrop').classList.add('open');
     $('modalBackdrop').setAttribute('aria-hidden', 'false');
     $('modalClose').focus();
@@ -722,12 +801,43 @@ Permissions: chatgpt.com, claude.ai, local analyzer only</div>`;
   }
 
   function closeModal() {
+    if (!$('modalBackdrop').classList.contains('open')) return;
     $('modalBackdrop').classList.remove('open');
     $('modalBackdrop').setAttribute('aria-hidden', 'true');
+    if (state.lastFocus && typeof state.lastFocus.focus === 'function') state.lastFocus.focus();
+    state.lastFocus = null;
+  }
+
+  function trapModalFocus(event) {
+    if (event.key !== 'Tab' || !$('modalBackdrop').classList.contains('open')) return;
+    const focusable = Array.from($('modalBackdrop').querySelectorAll('button:not([disabled]), a[href], textarea, select, [tabindex]:not([tabindex="-1"])'));
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   }
 
   function bindEvents() {
-    document.querySelectorAll('.example-tab').forEach((button) => button.addEventListener('click', () => updateSelectedExample(button.dataset.example)));
+    const tabs = Array.from(document.querySelectorAll('.example-tab'));
+    tabs.forEach((button, index) => {
+      button.addEventListener('click', () => updateSelectedExample(button.dataset.example));
+      button.addEventListener('keydown', (event) => {
+        const keys = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+        let next = null;
+        if (event.key in keys) next = (index + keys[event.key] + tabs.length) % tabs.length;
+        if (event.key === 'Home') next = 0;
+        if (event.key === 'End') next = tabs.length - 1;
+        if (next === null) return;
+        event.preventDefault();
+        tabs[next].focus();
+        updateSelectedExample(tabs[next].dataset.example);
+      });
+    });
+    $('responseText').addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') { event.preventDefault(); moveTokenSelection(1); }
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') { event.preventDefault(); moveTokenSelection(-1); }
+    });
     $('modeSelect').addEventListener('change', updateModeUI);
     $('runButton').addEventListener('click', runAnalysis);
     $('exportButton').addEventListener('click', exportResult);
@@ -751,7 +861,8 @@ Permissions: chatgpt.com, claude.ai, local analyzer only</div>`;
     $('toggleWordView').addEventListener('click', () => {
       state.showHeatmap = !state.showHeatmap;
       $('responseText').classList.toggle('plain-mode', !state.showHeatmap);
-      $('toggleWordView').innerHTML = `${state.showHeatmap ? 'Word view' : 'Plain view'} <span class="toggle-pill ${state.showHeatmap ? 'active' : ''}"><i></i></span>`;
+      $('toggleWordView').innerHTML = `${state.showHeatmap ? 'Heatmap' : 'Plain text'} <span class="toggle-pill ${state.showHeatmap ? 'active' : ''}" aria-hidden="true"><i></i></span>`;
+      $('toggleWordView').setAttribute('aria-pressed', String(state.showHeatmap));
       toast(state.showHeatmap ? 'Heatmap enabled.' : 'Heatmap hidden.');
     });
     $('settingsButton').addEventListener('click', () => openModal('settings'));
@@ -762,13 +873,14 @@ Permissions: chatgpt.com, claude.ai, local analyzer only</div>`;
     document.querySelectorAll('[data-nav]').forEach((button) => button.addEventListener('click', () => {
       const nav = button.dataset.nav;
       if (nav === 'lab') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
-      if (nav === 'examples') { document.querySelector('.example-picker').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+      if (nav === 'examples') { document.querySelector('.example-picker').scrollIntoView({ behavior: 'smooth', block: 'center' }); document.querySelector('.example-tab.active')?.focus({ preventScroll: true }); return; }
+      if (nav === 'guide') { $('guide').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
       openModal(nav);
     }));
     $('modalClose').addEventListener('click', closeModal);
     $('modalDone').addEventListener('click', closeModal);
     $('modalBackdrop').addEventListener('click', (event) => { if (event.target === $('modalBackdrop')) closeModal(); });
-    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeModal(); });
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeModal(); trapModalFocus(event); });
   }
 
   function init() {

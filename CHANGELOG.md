@@ -24,7 +24,7 @@
 - End-to-end and HTTP security test suites.
 - SEO: descriptive title and meta, canonical URL, Open Graph and Twitter cards, JSON-LD (`SoftwareApplication` and `FAQPage`), sitemap, robots.txt, web manifest, favicons, and a crawlable "How it works" and FAQ section.
 - UI: larger and more readable type, keyboard token navigation, accessible tabs, a modal focus trap, a skip link, reduced-motion and print styles, and a GitHub link.
-- CI, GitHub Pages deployment, issue and PR templates, and Dependabot for Actions.
+- CI, GitHub Pages deployment (gh-pages branch), issue and PR templates, and Dependabot for Actions.
 - `HeatmapClient.health()` and the `HEATMAP_URL` environment variable.
 
 ### Changed

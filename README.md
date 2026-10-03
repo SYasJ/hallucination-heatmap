@@ -4,18 +4,31 @@
 
 # Hallucination Heatmap
 
-**See where your LLM is guessing.** Token-level logprob heatmaps plus source-grounded claim verification for LLM and RAG outputs.
+### Catch LLM hallucinations before your users do.
+
+Your model says *"Yes, returns are accepted within 90 days"* with **89% confidence**, and your policy says **30**.<br>
+Hallucination Heatmap colours every token by how sure the model was **and** checks every claim against your own sources, so confident mistakes stop slipping through.
 
 [![CI](https://github.com/SYasJ/hallucination-heatmap/actions/workflows/ci.yml/badge.svg)](https://github.com/SYasJ/hallucination-heatmap/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
 
-[**Live demo**](https://syasj.github.io/hallucination-heatmap/) · [Quick start](#quick-start) · [Examples](examples/) · [API](#local-http-api) · [Chrome extension](#chrome-extension-chatgpt--claude)
+**[▶ Try the live demo](https://syasj.github.io/hallucination-heatmap/)**: no install, no sign-up, no API key.
+
+[Quick start](#quick-start) · [Examples](examples/) · [API](#local-http-api) · [Chrome extension](#chrome-extension-chatgpt--claude)
 
 <img src="screenshots/01-policy-mismatch.png" alt="Hallucination Heatmap: a confident answer about a 90-day return window, highlighted token by token and flagged as contradicting a 30-day policy" width="900">
 
 </div>
+
+## Why Hallucination Heatmap?
+
+- **Spot the guess.** Invented numbers, names, dates and citations usually show up as red, low-probability tokens.
+- **Prove it against your docs.** Each claim is marked *supported*, *contradicted* or *not in source*, with the quote that backs it up.
+- **Gate your RAG pipeline.** A 0–100 trust score and a JSON export plug straight into evaluation and guardrails.
+- **Works with what you already use.** Any OpenAI-compatible API, pasted ChatGPT or Claude answers, and a Chrome extension.
+- **Runs on your machine.** Zero dependencies, your API key never leaves your server, and it's MIT licensed.
 
 Hallucination Heatmap is an open-source, local-first tool for **LLM hallucination detection**. It keeps two signals apart that are easy to mix up:
 
@@ -204,7 +217,7 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
 ## Deploying the demo to GitHub Pages
 
-`.github/workflows/pages.yml` publishes the static front end, where the demo library runs fully in the browser. To enable it, go to **Settings → Pages → Build and deployment → Source: GitHub Actions**. Live analysis always needs `server.py` running locally.
+Every push to `main` runs `.github/workflows/pages.yml`, which publishes the static front end to the `gh-pages` branch. The demo library runs fully in the browser there. If the site doesn't appear, open **Settings → Pages** and set **Source: Deploy from a branch → `gh-pages` / root**. Live analysis always needs `server.py` running locally.
 
 ## Development
 

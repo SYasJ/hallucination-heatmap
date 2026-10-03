@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline, deterministic OpenAI-compatible provider for trying Hallucination Heatmap without an API key.
+"""Offline, deterministic OpenAI-compatible provider for trying LLM Hallucination Detector without an API key.
 
 It implements just enough of ``POST /v1/chat/completions`` for the analyzer:
 

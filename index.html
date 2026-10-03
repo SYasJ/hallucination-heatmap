@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
   <meta name="referrer" content="same-origin" />
-  <title>Hallucination Heatmap — Detect LLM Hallucinations with Token Logprobs &amp; Claim Verification</title>
+  <title>LLM Hallucination Detector — Free, Open-Source Hallucination Detection with Token Logprobs &amp; RAG Claim Verification</title>
   <meta name="description" content="Free, open-source LLM hallucination detector. Visualize token-level logprob confidence as a heatmap, verify claims against your RAG source context, and export a trust score. Works with any OpenAI-compatible API." />
   <meta name="keywords" content="LLM hallucination detection, hallucination heatmap, token logprobs, RAG evaluation, claim verification, AI fact checking, LLM observability, trust score, OpenAI logprobs, ChatGPT, Claude" />
   <meta name="author" content="Yasir Jilani" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta name="theme-color" content="#172337" />
   <meta name="color-scheme" content="light" />
-  <link rel="canonical" href="https://syasj.github.io/hallucination-heatmap/" />
+  <link rel="canonical" href="https://syasj.github.io/llm-hallucination-detector/" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
@@ -20,19 +20,19 @@
 
   <!-- Open Graph / social sharing -->
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Hallucination Heatmap" />
-  <meta property="og:title" content="Hallucination Heatmap — see where your LLM is guessing" />
+  <meta property="og:site_name" content="LLM Hallucination Detector" />
+  <meta property="og:title" content="LLM Hallucination Detector — catch AI hallucinations before your users do" />
   <meta property="og:description" content="Token-level confidence heatmaps plus source-grounded claim checks for LLM and RAG outputs. Open source, local-first, no key needed for the demo." />
-  <meta property="og:url" content="https://syasj.github.io/hallucination-heatmap/" />
-  <meta property="og:image" content="https://syasj.github.io/hallucination-heatmap/assets/og-image.png" />
+  <meta property="og:url" content="https://syasj.github.io/llm-hallucination-detector/" />
+  <meta property="og:image" content="https://syasj.github.io/llm-hallucination-detector/assets/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Hallucination Heatmap showing a confident answer contradicted by its source policy" />
+  <meta property="og:image:alt" content="LLM Hallucination Detector showing a confident answer contradicted by its source policy" />
   <meta property="og:locale" content="en_US" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Hallucination Heatmap — see where your LLM is guessing" />
+  <meta name="twitter:title" content="LLM Hallucination Detector — catch AI hallucinations before your users do" />
   <meta name="twitter:description" content="Token logprob heatmaps + claim verification against your sources. Open-source LLM hallucination inspector." />
-  <meta name="twitter:image" content="https://syasj.github.io/hallucination-heatmap/assets/og-image.png" />
+  <meta name="twitter:image" content="https://syasj.github.io/llm-hallucination-detector/assets/og-image.png" />
 
   <link rel="stylesheet" href="styles.css" />
   <script type="application/ld+json">
@@ -41,22 +41,22 @@
     "@graph": [
       {
         "@type": "SoftwareApplication",
-        "name": "Hallucination Heatmap",
+        "name": "LLM Hallucination Detector",
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "Windows, macOS, Linux",
-        "url": "https://syasj.github.io/hallucination-heatmap/",
-        "downloadUrl": "https://github.com/SYasJ/hallucination-heatmap",
+        "url": "https://syasj.github.io/llm-hallucination-detector/",
+        "downloadUrl": "https://github.com/SYasJ/llm-hallucination-detector",
         "softwareVersion": "0.2.0",
         "license": "https://opensource.org/licenses/MIT",
         "description": "Open-source workbench that visualizes LLM token logprob confidence as a heatmap and verifies factual claims against supplied source context to flag hallucinations.",
         "author": { "@type": "Person", "name": "Yasir Jilani", "url": "https://github.com/SYasJ" },
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "screenshot": "https://syasj.github.io/hallucination-heatmap/screenshots/01-policy-mismatch.png"
+        "screenshot": "https://syasj.github.io/llm-hallucination-detector/screenshots/01-policy-mismatch.png"
       },
       {
         "@type": "FAQPage",
         "mainEntity": [
-          { "@type": "Question", "name": "Can token logprobs detect hallucinations?", "acceptedAnswer": { "@type": "Answer", "text": "Partly. Low token probability often marks places where a model is guessing, such as invented numbers or names, but a model can be highly confident in a false claim. Hallucination Heatmap therefore pairs logprobs with a separate claim check against your source context." } },
+          { "@type": "Question", "name": "Can token logprobs detect hallucinations?", "acceptedAnswer": { "@type": "Answer", "text": "Partly. Low token probability often marks places where a model is guessing, such as invented numbers or names, but a model can be highly confident in a false claim. LLM Hallucination Detector therefore pairs logprobs with a separate claim check against your source context." } },
           { "@type": "Question", "name": "Does it work with ChatGPT or Claude?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, in verifier mode. Paste an existing answer or use the Chrome extension; a verifier model audits its claims. Original token logprobs cannot be recovered from a closed chat product." } },
           { "@type": "Question", "name": "Is my API key sent to the browser?", "acceptedAnswer": { "@type": "Answer", "text": "No. The key stays in a local .env file read by the Python server. The browser only talks to that local server." } },
           { "@type": "Question", "name": "Is the trust score calibrated?", "acceptedAnswer": { "@type": "Answer", "text": "No. It is a transparent prototype heuristic (70% evidence alignment, 30% mean token confidence). Set your own thresholds and keep human review for high-stakes use." } }
@@ -68,12 +68,12 @@
 </head>
 <body>
   <a class="skip-link" href="#workbench">Skip to the workbench</a>
-  <noscript><p class="noscript-note">Hallucination Heatmap needs JavaScript to render the interactive demo. Read the <a href="https://github.com/SYasJ/hallucination-heatmap">project README on GitHub</a> for screenshots and setup.</p></noscript>
+  <noscript><p class="noscript-note">LLM Hallucination Detector needs JavaScript to render the interactive demo. Read the <a href="https://github.com/SYasJ/llm-hallucination-detector">project README on GitHub</a> for screenshots and setup.</p></noscript>
   <div class="app-shell">
     <aside class="sidebar" aria-label="Main navigation">
-      <a class="brand" href="#top" aria-label="Hallucination Heatmap home">
+      <a class="brand" href="#top" aria-label="LLM Hallucination Detector home">
         <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span class="brand-wordmark"><strong>heatmap</strong><small>CONFIDENCE LAYER</small></span>
+        <span class="brand-wordmark"><strong>hallucination</strong><small>LLM DETECTOR</small></span>
       </a>
 
       <div class="workspace-switcher" aria-hidden="true">
@@ -114,7 +114,7 @@
         <p>Provider credentials stay on your local server. They never enter this page.</p>
         <button type="button" data-nav="settings">Connection settings <span>→</span></button>
       </div>
-      <div class="sidebar-footer"><span class="footer-dot"></span> Open source · MIT <a class="version" href="https://github.com/SYasJ/hallucination-heatmap" rel="noopener" target="_blank">v0.2 ↗</a></div>
+      <div class="sidebar-footer"><span class="footer-dot"></span> Open source · MIT <a class="version" href="https://github.com/SYasJ/llm-hallucination-detector" rel="noopener" target="_blank">v0.2 ↗</a></div>
     </aside>
 
     <div class="main-shell" id="top">
@@ -125,7 +125,7 @@
           <button class="top-icon-button" id="helpButton" aria-label="Scoring and confidence guide" title="Scoring guide" type="button">
             <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.2"/><path d="M8.1 7.4a2 2 0 1 1 3.2 1.6c-.9.6-1.3 1-1.3 2M10 13.8v.1"/></svg>
           </button>
-          <a class="github-link" href="https://github.com/SYasJ/hallucination-heatmap" target="_blank" rel="noopener" aria-label="View source on GitHub" title="View source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span>GitHub</span></a>
+          <a class="github-link" href="https://github.com/SYasJ/llm-hallucination-detector" target="_blank" rel="noopener" aria-label="View source on GitHub" title="View source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span>GitHub</span></a>
         </div>
       </header>
 
@@ -133,7 +133,7 @@
         <section class="page-heading" id="workbench">
           <div class="heading-copy">
             <div class="eyebrow"><span class="eyebrow-mark"></span> MODEL OBSERVABILITY <span class="eyebrow-sep">/</span> TOKEN INSPECTION</div>
-            <div class="title-line"><h1>Hallucination <span>Heatmap</span></h1><span class="alpha-tag">BETA</span></div>
+            <div class="title-line"><h1>LLM Hallucination <span>Detector</span></h1><span class="alpha-tag">BETA</span></div>
             <p>See where your LLM is certain, where it’s guessing, and what the evidence actually says — token logprobs and source-grounded claim checks, side by side.</p>
           </div>
           <div class="heading-actions">
@@ -296,12 +296,12 @@
           <div class="guide-intro">
             <span class="panel-kicker">HOW IT WORKS</span>
             <h2 id="guideTitle">Detect LLM hallucinations with two independent signals</h2>
-            <p>Hallucination Heatmap is an open-source inspector for large language model output. It colours every token by the model’s own probability and, separately, audits each factual claim against the source you supply—so a fluent, confident answer that contradicts your documents still gets flagged.</p>
+            <p>LLM Hallucination Detector is an open-source inspector for large language model output. It colours every token by the model’s own probability and, separately, audits each factual claim against the source you supply—so a fluent, confident answer that contradicts your documents still gets flagged.</p>
           </div>
           <ol class="guide-steps">
             <li><span class="guide-step-num">1</span><h3>Token confidence heatmap</h3><p>Requests <code>logprobs</code> from any OpenAI-compatible Chat Completions API and shows <code>exp(logprob)</code> per token. Invented numbers, names and dates often surface as low-probability red tokens.</p></li>
             <li><span class="guide-step-num">2</span><h3>Source-grounded claim check</h3><p>A verifier model splits the answer into atomic claims and labels each one <em>supported</em>, <em>contradicted</em> or <em>not in source</em>, quoting the evidence from your RAG context.</p></li>
-            <li><span class="guide-step-num">3</span><h3>Exportable trust record</h3><p>Download a <code>hallucination-heatmap/v1</code> JSON with the trust score, claim verdicts and token logprobs, or call the local API from your RAG and evaluation pipelines.</p></li>
+            <li><span class="guide-step-num">3</span><h3>Exportable trust record</h3><p>Download a <code>llm-hallucination-detector/v1</code> JSON with the trust score, claim verdicts and token logprobs, or call the local API from your RAG and evaluation pipelines.</p></li>
           </ol>
           <div class="guide-columns">
             <div class="guide-card">
@@ -322,7 +322,7 @@
             </div>
           </div>
         </section>
-        <footer class="page-footer"><span>Hallucination Heatmap <b>·</b> open-source, local-first · <a href="https://github.com/SYasJ/hallucination-heatmap" rel="noopener" target="_blank">GitHub</a> · MIT License</span><span>For evaluation support—not a truth guarantee.</span></footer>
+        <footer class="page-footer"><span>LLM Hallucination Detector <b>·</b> open-source, local-first · <a href="https://github.com/SYasJ/llm-hallucination-detector" rel="noopener" target="_blank">GitHub</a> · MIT License</span><span>For evaluation support—not a truth guarantee.</span></footer>
       </main>
     </div>
   </div>

@@ -52,11 +52,11 @@ try {
       <div style="flex:0 0 430px;color:#fff">
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:28px">
           <img src="data:image/svg+xml;base64,${(await readFile(out('assets', 'favicon.svg'))).toString('base64')}" width="56" height="56">
-          <span style="font-size:22px;font-weight:700;letter-spacing:-.5px">heatmap</span>
+          <span style="font-size:19px;font-weight:650;letter-spacing:-.2px;color:#c9d6e3">Hallucination detection for LLM &amp; RAG</span>
         </div>
-        <div style="font-size:52px;line-height:1.05;font-weight:800;letter-spacing:-2px">Hallucination<br><span style="color:#58cdb2">Heatmap</span></div>
+        <div style="font-size:50px;line-height:1.05;font-weight:800;letter-spacing:-2px">LLM Hallucination<br><span style="color:#58cdb2">Detector</span></div>
         <p style="margin:22px 0 0;font-size:23px;line-height:1.4;color:#c9d6e3">See where your LLM is guessing. Token logprobs + claim checks against your sources.</p>
-        <p style="margin:26px 0 0;font-size:16px;color:#8fa3b8">Open source · local-first · OpenAI-compatible</p>
+        <p style="margin:26px 0 0;font-size:16px;color:#8fa3b8">Free · open source · runs locally · OpenAI-compatible</p>
       </div>
       <img src="data:image/png;base64,${shot.toString('base64')}" style="width:760px;border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.45);align-self:flex-start;margin-top:70px">
     </div></body></html>`);

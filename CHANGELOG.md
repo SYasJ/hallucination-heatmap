@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Renamed the project from **Hallucination Heatmap** to **LLM Hallucination Detector** (repo `llm-hallucination-detector`) to make it easier to find in search. The UI title, metadata, social card, extension name and export schema (`llm-hallucination-detector/v1`) are updated to match.
+- Added a 13-page illustrated wiki (`wiki/`), published automatically to the GitHub Wiki.
+
 ## 0.2.0 — 2026-10-03
 
 ### Security

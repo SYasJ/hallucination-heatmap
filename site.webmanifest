@@ -1,5 +1,5 @@
 {
-  "name": "Hallucination Heatmap",
+  "name": "LLM Hallucination Detector",
   "short_name": "Heatmap",
   "description": "Visualize LLM token confidence and verify claims against source context to catch hallucinations.",
   "start_url": "./",

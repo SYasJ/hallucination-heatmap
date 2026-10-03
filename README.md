@@ -1,28 +1,28 @@
 <div align="center">
 
-<img src="assets/favicon.svg" width="72" height="72" alt="Hallucination Heatmap logo">
+<img src="assets/favicon.svg" width="72" height="72" alt="LLM Hallucination Detector logo">
 
-# Hallucination Heatmap
+# LLM Hallucination Detector
 
 ### Catch LLM hallucinations before your users do.
 
 Your model says *"Yes, returns are accepted within 90 days"* with **89% confidence**, and your policy says **30**.<br>
-Hallucination Heatmap colours every token by how sure the model was **and** checks every claim against your own sources, so confident mistakes stop slipping through.
+LLM Hallucination Detector colours every token by how sure the model was **and** checks every claim against your own sources, so confident mistakes stop slipping through.
 
-[![CI](https://github.com/SYasJ/hallucination-heatmap/actions/workflows/ci.yml/badge.svg)](https://github.com/SYasJ/hallucination-heatmap/actions/workflows/ci.yml)
+[![CI](https://github.com/SYasJ/llm-hallucination-detector/actions/workflows/ci.yml/badge.svg)](https://github.com/SYasJ/llm-hallucination-detector/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
 
-**[▶ Try the live demo](https://syasj.github.io/hallucination-heatmap/)**: no install, no sign-up, no API key.
+**[▶ Try the live demo](https://syasj.github.io/llm-hallucination-detector/)**: no install, no sign-up, no API key.
 
-[Quick start](#quick-start) · [Examples](examples/) · [API](#local-http-api) · [Chrome extension](#chrome-extension-chatgpt--claude)
+[📖 Wiki](https://github.com/SYasJ/llm-hallucination-detector/wiki) · [Quick start](#quick-start) · [Examples](examples/) · [API](#local-http-api) · [Chrome extension](#chrome-extension-chatgpt--claude)
 
-<img src="screenshots/01-policy-mismatch.png" alt="Hallucination Heatmap: a confident answer about a 90-day return window, highlighted token by token and flagged as contradicting a 30-day policy" width="900">
+<img src="screenshots/01-policy-mismatch.png" alt="LLM Hallucination Detector: a confident answer about a 90-day return window, highlighted token by token and flagged as contradicting a 30-day policy" width="900">
 
 </div>
 
-## Why Hallucination Heatmap?
+## Why LLM Hallucination Detector?
 
 - **Spot the guess.** Invented numbers, names, dates and citations usually show up as red, low-probability tokens.
 - **Prove it against your docs.** Each claim is marked *supported*, *contradicted* or *not in source*, with the quote that backs it up.
@@ -30,7 +30,7 @@ Hallucination Heatmap colours every token by how sure the model was **and** chec
 - **Works with what you already use.** Any OpenAI-compatible API, pasted ChatGPT or Claude answers, and a Chrome extension.
 - **Runs on your machine.** Zero dependencies, your API key never leaves your server, and it's MIT licensed.
 
-Hallucination Heatmap is an open-source, local-first tool for **LLM hallucination detection**. It keeps two signals apart that are easy to mix up:
+LLM Hallucination Detector (formerly *Hallucination Heatmap*) is an open-source, local-first tool for **LLM hallucination detection**. It keeps two signals apart that are easy to mix up:
 
 | Signal | What it measures | Where it comes from |
 | --- | --- | --- |
@@ -45,7 +45,7 @@ A fluent answer can be 90% "confident" and still contradict your source. The hea
 
 - 🔥 **Token heatmap.** Every token is coloured by probability (red < 55%, amber 55–84%, green ≥ 85%). Hover, click, or use the arrow keys to inspect the logprob.
 - ✅ **Claim check against sources.** Atomic claims get verdicts with quoted evidence from your context.
-- 📊 **Trust score and JSON export.** `hallucination-heatmap/v1` records hold scores, verdicts and token logprobs for RAG and evaluation pipelines.
+- 📊 **Trust score and JSON export.** `llm-hallucination-detector/v1` records hold scores, verdicts and token logprobs for RAG and evaluation pipelines.
 - 🧪 **Five built-in demos, no API key.** Policy mismatch, invented statistics, a grounded answer, a fabricated legal citation, and product-spec drift.
 - 🔌 **Any OpenAI-compatible provider.** OpenAI, Azure OpenAI, vLLM, Together, Groq, LM Studio, Ollama's `/v1` endpoint, and others. Falls back to verifier mode when logprobs aren't supported.
 - 🧩 **Chrome extension.** Adds an *Analyze answer* button to ChatGPT and Claude responses.
@@ -57,8 +57,8 @@ A fluent answer can be 90% "confident" and still contradict your source. The hea
 Requirements: Python 3.10 or newer. Nothing to install.
 
 ```bash
-git clone https://github.com/SYasJ/hallucination-heatmap.git
-cd hallucination-heatmap
+git clone https://github.com/SYasJ/llm-hallucination-detector.git
+cd llm-hallucination-detector
 python3 server.py
 ```
 
@@ -217,7 +217,7 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
 ## Deploying the demo to GitHub Pages
 
-One-time setup: open **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**. After that, every push to `main` runs `.github/workflows/pages.yml` and publishes the static front end to <https://syasj.github.io/hallucination-heatmap/>. You can also start a deploy by hand from the **Actions** tab with **Run workflow**. The demo library runs fully in the browser. Live analysis always needs `server.py` running locally.
+One-time setup: open **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**. After that, every push to `main` runs `.github/workflows/pages.yml` and publishes the static front end to <https://syasj.github.io/llm-hallucination-detector/>. You can also start a deploy by hand from the **Actions** tab with **Run workflow**. The demo library runs fully in the browser. Live analysis always needs `server.py` running locally.
 
 ## Development
 
@@ -241,6 +241,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and the [CHANGELOG](CHANGELOG.md).
 
 ## License
 
-[MIT](LICENSE) © Yasir Jilani and Hallucination Heatmap contributors.
+[MIT](LICENSE) © Yasir Jilani and LLM Hallucination Detector contributors.
 
 <sub>Keywords: LLM hallucination detection, token logprobs visualization, RAG evaluation, claim verification, AI fact-checking, LLM observability, trust score, OpenAI logprobs, ChatGPT and Claude answer review.</sub>

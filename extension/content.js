@@ -55,7 +55,7 @@
         button:disabled { opacity:.65;cursor:wait; }
         svg { width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round; }
       </style>
-      <button type="button" aria-label="Analyze this answer with Hallucination Heatmap">
+      <button type="button" aria-label="Analyze this answer with LLM Hallucination Detector">
         <svg viewBox="0 0 20 20"><path d="M10 2.8 16 5v4.4c0 3.7-2.5 6.3-6 7.8-3.5-1.5-6-4.1-6-7.8V5l6-2.2Z"/><path d="m7.4 9.9 1.7 1.7 3.7-3.8"/></svg>
         <span>Analyze answer</span>
       </button>`;
@@ -170,7 +170,7 @@
       .error-box small { display:inline-block;margin-top:5px;color:#8b8588;font-size:7px; }
       code { padding:1px 3px;border-radius:3px;background:#f0f2f3;font-family:ui-monospace,monospace; }
       .panel-foot { margin-top:10px;padding-top:8px;border-top:1px solid #edf0f2;color:#9aa4ae;font-size:7px; }
-    </style><section class="panel"><header><span class="logo"><svg viewBox="0 0 20 20"><path d="M10 2.8 16 5v4.4c0 3.7-2.5 6.3-6 7.8-3.5-1.5-6-4.1-6-7.8V5l6-2.2Z"/><path d="m7.4 9.9 1.7 1.7 3.7-3.8"/></svg></span><div class="head-copy"><strong>${escapeHTML(title)}</strong><small>Hallucination Heatmap · local MVP</small></div><button class="close" type="button" aria-label="Close">×</button></header><main>${body}</main></section>`;
+    </style><section class="panel"><header><span class="logo"><svg viewBox="0 0 20 20"><path d="M10 2.8 16 5v4.4c0 3.7-2.5 6.3-6 7.8-3.5-1.5-6-4.1-6-7.8V5l6-2.2Z"/><path d="m7.4 9.9 1.7 1.7 3.7-3.8"/></svg></span><div class="head-copy"><strong>${escapeHTML(title)}</strong><small>LLM Hallucination Detector · local MVP</small></div><button class="close" type="button" aria-label="Close">×</button></header><main>${body}</main></section>`;
     shadow.querySelector('.close')?.addEventListener('click', () => showPanel());
   }
 

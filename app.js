@@ -672,7 +672,7 @@
     const result = state.result;
     const tokens = getDisplayTokens(result);
     const exportData = {
-      schema: 'hallucination-heatmap/v1',
+      schema: 'llm-hallucination-detector/v1',
       run_id: result.id || null,
       created_at: result.created_at || new Date().toISOString(),
       model: result.model || null,
@@ -731,8 +731,8 @@
       html = `<p class="modal-lead">Connect an OpenAI-compatible chat completions endpoint from the local server. The browser never receives your provider API key.</p>
         <div class="setting-status ${anyConnection ? 'connected' : ''}"><i class="setting-status-dot"></i><div><strong>${!state.backend.available ? 'Local server not detected' : connected ? 'Generation provider detected' : verifierConnected ? 'Verifier-only connection detected' : 'Demo mode is ready; no API key detected'}</strong><small>${!state.backend.available ? 'This page is running as a static demo. Clone the repo and run python3 server.py to enable live analysis.' : anyConnection ? connectionSummary : 'Add your credentials to .env, then restart server.py.'}</small></div></div>
         <h3 class="modal-section-title">Quick start</h3>
-        <div class="modal-code">git clone https://github.com/SYasJ/hallucination-heatmap.git
-cd hallucination-heatmap
+        <div class="modal-code">git clone https://github.com/SYasJ/llm-hallucination-detector.git
+cd llm-hallucination-detector
 cp .env.example .env   <span class="code-muted"># add your key</span>
 python3 server.py      <span class="code-muted"># → http://localhost:8787</span></div>
         <h3 class="modal-section-title">Local configuration</h3>

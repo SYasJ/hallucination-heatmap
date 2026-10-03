@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local backend for Hallucination Heatmap. Standard library only."""
+"""Local backend for LLM Hallucination Detector. Standard library only."""
 from __future__ import annotations
 
 import json
@@ -185,7 +185,7 @@ def provider_chat(
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "User-Agent": f"hallucination-heatmap-local/{__version__}",
+            "User-Agent": f"llm-hallucination-detector/{__version__}",
         },
     )
     try:
@@ -664,7 +664,7 @@ class HeatmapHandler(SimpleHTTPRequestHandler):
             if self._reject_api_request():
                 return
             if route == "/api/health":
-                self.send_json({"ok": True, "service": "hallucination-heatmap", "version": __version__})
+                self.send_json({"ok": True, "service": "llm-hallucination-detector", "version": __version__})
                 return
             if route == "/api/config":
                 cfg = config()
@@ -756,14 +756,14 @@ def main() -> None:
     port = _int_env("ANALYZER_PORT", _int_env("PORT", DEFAULT_PORT))
     server = ThreadingHTTPServer((host, port), HeatmapHandler)
     display_host = "localhost" if host in {"127.0.0.1", "0.0.0.0", "::"} else host
-    print(f"Hallucination Heatmap v{__version__} is serving on http://{display_host}:{port}")
+    print(f"LLM Hallucination Detector v{__version__} is serving on http://{display_host}:{port}")
     if host not in {"127.0.0.1", "localhost", "::1"}:
         print("WARNING: listening beyond localhost. The API has no authentication; keep it on a trusted network.")
     print("Demo mode works without an API key. For live analysis, configure .env and restart.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nStopping Hallucination Heatmap.")
+        print("\nStopping LLM Hallucination Detector.")
     finally:
         server.server_close()
 

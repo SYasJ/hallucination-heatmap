@@ -7,13 +7,13 @@ Only the latest release on `main` receives security fixes.
 ## Reporting a vulnerability
 
 Please **do not open a public issue** for security problems. Use GitHub's
-[private vulnerability reporting](https://github.com/SYasJ/hallucination-heatmap/security/advisories/new)
+[private vulnerability reporting](https://github.com/SYasJ/llm-hallucination-detector/security/advisories/new)
 and include the steps to reproduce, the impact, and any suggested fix. You should get an
 acknowledgement within a few days.
 
 ## Threat model and scope
 
-Hallucination Heatmap is a **local developer tool**. The analyzer has no user authentication. It is
+LLM Hallucination Detector is a **local developer tool**. The analyzer has no user authentication. It is
 designed to run on `127.0.0.1` and be used by the person running it.
 
 In scope:

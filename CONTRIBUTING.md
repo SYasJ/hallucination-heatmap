@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Hallucination Heatmap!
+Thanks for helping improve LLM Hallucination Detector!
 
 ## Ground rules
 

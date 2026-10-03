@@ -1,4 +1,4 @@
-"""Tiny standard-library client for a local Hallucination Heatmap server."""
+"""Tiny standard-library client for a local LLM Hallucination Detector server."""
 from __future__ import annotations
 
 import json

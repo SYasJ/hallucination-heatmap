@@ -1,0 +1,1 @@
+<sub>LLM Hallucination Detector · MIT License · © Yasir Jilani · <a href="https://github.com/SYasJ/llm-hallucination-detector">github.com/SYasJ/llm-hallucination-detector</a> · Confidence is not correctness: always review high-stakes output.</sub>

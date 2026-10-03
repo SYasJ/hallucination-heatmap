@@ -1,0 +1,41 @@
+name: Publish wiki
+
+# Mirrors the wiki/ folder into the GitHub Wiki.
+# One-time setup: open the repo's Wiki tab and click "Create the first page" → "Save page"
+# (GitHub only creates the wiki repository after that first page exists).
+
+on:
+  push:
+    branches: [main]
+    paths: ["wiki/**", ".github/workflows/wiki.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wiki
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push wiki/ to the GitHub Wiki
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          WIKI_URL="https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git"
+          if ! git clone --depth 1 "$WIKI_URL" wiki-repo 2>/dev/null; then
+            echo "::error::The wiki is not initialized yet. Open the Wiki tab, click 'Create the first page', save it, then re-run this workflow."
+            exit 1
+          fi
+          rsync -a --delete --exclude .git wiki/ wiki-repo/
+          cd wiki-repo
+          git config user.name "Yasir Jilani"
+          git config user.email "27597591+SYasJ@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "Wiki already up to date."; exit 0; fi
+          git commit -q -m "Sync wiki from ${GITHUB_SHA::7}"
+          git push -q origin HEAD

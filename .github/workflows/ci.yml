@@ -21,7 +21,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Unit, security and end-to-end tests
         run: python -m unittest discover -s tests -v
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: Syntax-check browser and extension scripts

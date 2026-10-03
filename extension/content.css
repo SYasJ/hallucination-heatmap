@@ -1,0 +1,12 @@
+/* CSS Custom Highlights show claim-level verifier estimates without rewriting page text. */
+::highlight(hh-contradicted) {
+  background-color: rgba(238, 116, 124, .30);
+  text-decoration: underline wavy rgba(194, 75, 84, .88);
+}
+::highlight(hh-unverified) {
+  background-color: rgba(245, 195, 88, .30);
+  text-decoration: underline wavy rgba(185, 130, 42, .86);
+}
+::highlight(hh-supported) {
+  background-color: rgba(75, 183, 145, .22);
+}

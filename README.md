@@ -217,7 +217,7 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
 ## Deploying the demo to GitHub Pages
 
-Every push to `main` runs `.github/workflows/pages.yml`, which publishes the static front end to the `gh-pages` branch. The demo library runs fully in the browser there. If the site doesn't appear, open **Settings → Pages** and set **Source: Deploy from a branch → `gh-pages` / root**. Live analysis always needs `server.py` running locally.
+One-time setup: open **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**. After that, every push to `main` runs `.github/workflows/pages.yml` and publishes the static front end to <https://syasj.github.io/hallucination-heatmap/>. You can also start a deploy by hand from the **Actions** tab with **Run workflow**. The demo library runs fully in the browser. Live analysis always needs `server.py` running locally.
 
 ## Development
 

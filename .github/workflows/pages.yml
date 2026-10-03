@@ -30,7 +30,7 @@ jobs:
           cp index.html styles.css app.js robots.txt sitemap.xml site.webmanifest .nojekyll _site/
           cp -r assets screenshots _site/
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
       - id: deployment

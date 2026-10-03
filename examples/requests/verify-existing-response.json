@@ -1,0 +1,6 @@
+{
+  "prompt": "Does this answer follow the policy?",
+  "context": "Unused items in original packaging: return within 30 days.",
+  "existing_response": "Yes, used items can be returned within 90 days.",
+  "mode": "verify"
+}

@@ -1,167 +1,233 @@
+<div align="center">
+
+<img src="assets/favicon.svg" width="72" height="72" alt="Hallucination Heatmap logo">
+
 # Hallucination Heatmap
 
-A local-first prototype for inspecting model-token likelihood and source support side by side. It includes a no-key demo workspace, a small OpenAI-compatible API proxy, JSON trust-score export, and a click-to-review Chrome extension MVP for ChatGPT and Claude.
+**See where your LLM is guessing.** Token-level logprob heatmaps plus source-grounded claim verification for LLM and RAG outputs.
 
-> **Important:** logprob is not truth. A model can be highly confident in a false claim. Verifier judgments can also be wrong. The prototype score is a product/demo heuristic, not a calibrated probability of correctness.
+[![CI](https://github.com/SYasJ/hallucination-heatmap/actions/workflows/ci.yml/badge.svg)](https://github.com/SYasJ/hallucination-heatmap/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
+![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
 
-## Run the demo
+[**Live demo**](https://syasj.github.io/hallucination-heatmap/) · [Quick start](#quick-start) · [Examples](examples/) · [API](#local-http-api) · [Chrome extension](#chrome-extension-chatgpt--claude)
 
-Requirements: Python 3.10+; no Python or JavaScript packages are needed.
+<img src="screenshots/01-policy-mismatch.png" alt="Hallucination Heatmap: a confident answer about a 90-day return window, highlighted token by token and flagged as contradicting a 30-day policy" width="900">
+
+</div>
+
+Hallucination Heatmap is an open-source, local-first tool for **LLM hallucination detection**. It keeps two signals apart that are easy to mix up:
+
+| Signal | What it measures | Where it comes from |
+| --- | --- | --- |
+| **Token confidence** | How likely the model was to pick each token: `exp(logprob)` | `logprobs` from any OpenAI-compatible Chat Completions API |
+| **Evidence alignment** | Whether each factual claim is *supported*, *contradicted* or *not in source* | A verifier model checks the answer against the context you supply (RAG documents, policies, references) |
+
+A fluent answer can be 90% "confident" and still contradict your source. The heatmap shows you both, side by side.
+
+> **Logprob is not truth.** A model can be highly confident in a false claim, and verifier judgments can also be wrong. The trust score is a transparent prototype heuristic, not a calibrated probability of correctness.
+
+## Features
+
+- 🔥 **Token heatmap.** Every token is coloured by probability (red < 55%, amber 55–84%, green ≥ 85%). Hover, click, or use the arrow keys to inspect the logprob.
+- ✅ **Claim check against sources.** Atomic claims get verdicts with quoted evidence from your context.
+- 📊 **Trust score and JSON export.** `hallucination-heatmap/v1` records hold scores, verdicts and token logprobs for RAG and evaluation pipelines.
+- 🧪 **Five built-in demos, no API key.** Policy mismatch, invented statistics, a grounded answer, a fabricated legal citation, and product-spec drift.
+- 🔌 **Any OpenAI-compatible provider.** OpenAI, Azure OpenAI, vLLM, Together, Groq, LM Studio, Ollama's `/v1` endpoint, and others. Falls back to verifier mode when logprobs aren't supported.
+- 🧩 **Chrome extension.** Adds an *Analyze answer* button to ChatGPT and Claude responses.
+- 🔒 **Local-first and hardened.** Keys stay server-side. The server binds to localhost and blocks DNS rebinding and cross-site requests (see [Security](#security)).
+- 📦 **Zero dependencies.** Python standard library and vanilla JavaScript only.
+
+## Quick start
+
+Requirements: Python 3.10 or newer. Nothing to install.
 
 ```bash
+git clone https://github.com/SYasJ/hallucination-heatmap.git
+cd hallucination-heatmap
 python3 server.py
 ```
 
-Open <http://localhost:8787>. The three curated scenarios work without credentials:
+Open <http://localhost:8787>. The demo library works immediately, without credentials.
 
-1. **Policy mismatch** — a fluent answer contradicts a 30-day, unused-item return policy.
-2. **Invented statistics** — a plausible research summary adds sample size, affiliation, and effect sizes missing from the source.
-3. **Grounded answer** — Apollo 11 facts align with the supplied reference.
-
-Select a sample to change the prompt, source and annotated output. Hover or click a highlighted token to inspect its probability. The demo is fixed, labelled data; it does not pretend to analyze a custom question without a model call.
-
-## Connect an OpenAI-compatible API
-
-Copy `.env.example` to `.env`, set your endpoint and key, then restart the server:
+### Connect a model
 
 ```bash
-cp .env.example .env
-# Edit .env, then:
+cp .env.example .env      # then edit .env
 python3 server.py
 ```
-
-Example configuration:
 
 ```dotenv
 LLM_BASE_URL=https://api.openai.com/v1
 LLM_API_KEY=your-key
 LLM_MODEL=gpt-4o-mini
 
-# Optional: use a different verifier model/provider
+# Optional: a different verifier for a less correlated check
 VERIFIER_BASE_URL=https://api.openai.com/v1
 VERIFIER_API_KEY=your-verifier-key
 VERIFIER_MODEL=your-verifier-model
 ```
 
-`LLM_BASE_URL` should be the provider's Chat Completions API root (normally the `/v1` URL, not `/chat/completions`). The backend keeps the key server-side and makes same-origin requests from the UI. The API settings panel reports whether a key is configured, but never returns the key.
+`LLM_BASE_URL` is the provider's Chat Completions root (normally the `/v1` URL, not `/chat/completions`). The browser never receives the key, and `/api/config` reports only whether one is set.
 
-### Analysis modes
+### Try it offline (no API key)
 
-- **OpenAI-compatible · logprobs** — requests `logprobs=true` and `top_logprobs=0`. The chosen-token confidence is `exp(logprob)`. If the API rejects logprobs for this model, the server falls back to a regular answer and a claim-level verifier pass when possible. Providers vary in their logprob behavior.
-- **Verifier mode · no logprobs** — uses a second pass to label factual claims as supported, contradicted, not in the supplied context, or unverified. A verifier highlight is explicitly **not** a token probability. If no context is attached, the pass is only a best-effort review against model knowledge and no source-grounded trust score is produced.
-- **Existing/closed-model response** — expand “Analyze an existing response instead”, paste the output, choose Verifier mode, and run. This can review an answer from ChatGPT, Claude, or another API without claiming to recover its original token logprobs. The configured verifier endpoint must use the supported Chat Completions-compatible shape; direct native provider APIs need an adapter.
-
-The default verifier is the configured generation model. For a less correlated check, configure a separate verifier model or endpoint. A second model is still not a proof of truth.
-
-## Local HTTP API
-
-The UI uses `POST /api/analyze`. The server accepts a task, optional retrieval context, and mode:
+A deterministic mock provider is included for demos, tests and CI:
 
 ```bash
-curl -s http://localhost:8787/api/analyze \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "prompt": "Can I return a used blender after 60 days?",
-    "context": "Unused items in original packaging: return within 30 days.",
-    "mode": "logprobs"
-  }' | python3 -m json.tool
+python3 examples/mock_provider.py &                                   # fake OpenAI-compatible API on :9999
+LLM_BASE_URL=http://127.0.0.1:9999/v1 LLM_API_KEY=mock python3 server.py
 ```
 
-For a previously generated response, pass `existing_response` and `mode: "verify"`:
+Its verdicts come from a naive keyword check and are **not real**. Use it only to exercise the pipeline.
 
-```json
-{
-  "prompt": "Does this answer follow the policy?",
-  "context": "Unused items in original packaging: return within 30 days.",
-  "existing_response": "Yes, used items can be returned within 90 days.",
-  "mode": "verify"
-}
-```
+## Analysis modes
 
-Other endpoints: `GET /api/health` and `GET /api/config` (safe, non-secret configuration status).
+| Mode | What happens | Trust score |
+| --- | --- | --- |
+| **Demo library** | Five curated, labelled examples. No network calls. | Fixed demo values |
+| **OpenAI-compatible · logprobs** | Generates an answer with `logprobs=true`. If you supplied context, a verifier checks the claims. | `0.7 × evidence + 0.3 × mean token confidence` with context. None without context |
+| **Verifier mode · no logprobs** | Generates an answer, or takes a pasted one, then audits its claims. | Evidence-only with context. None without context |
 
-A zero-dependency Python helper is included for RAG/evaluation workers:
+**Reviewing ChatGPT, Claude or other closed models:** expand *Analyze an existing response instead*, paste the answer, choose **Verifier mode**, and run. The original token logprobs can't be recovered, so only claim-level review is available.
+
+## Examples
+
+The [`examples/`](examples/) folder contains runnable scripts:
+
+| File | What it shows |
+| --- | --- |
+| [`rag_gate.py`](examples/rag_gate.py) | Block or escalate a RAG answer when its trust score is low or a claim is contradicted |
+| [`batch_eval.py`](examples/batch_eval.py) + [`dataset.jsonl`](examples/dataset.jsonl) | Score a JSONL dataset and write a CSV report |
+| [`curl.sh`](examples/curl.sh) + [`requests/`](examples/requests/) | Raw HTTP requests for each mode |
+| [`mock_provider.py`](examples/mock_provider.py) | Offline OpenAI-compatible provider for demos and CI |
+
+### Python client
 
 ```python
-from heatmap_client import HeatmapClient
+from heatmap_client import HeatmapClient   # zero-dependency, single file
 
-heatmap = HeatmapClient("http://127.0.0.1:8787")
+heatmap = HeatmapClient()                  # or HeatmapClient("http://host:8787"), or set HEATMAP_URL
 run = heatmap.analyze(
     "Can I return this item after 60 days?",
     context="Unused items may be returned within 30 days.",
     mode="logprobs",
 )
-record = {
-    "answer": run["output"],
-    "trust_score": run["trust_score"],  # may be null if evidence is unavailable
-    "claims": run["claims"],
-}
+if run["trust_score"] is None or run["trust_score"] < 70:
+    print("Needs review:", [c["claim"] for c in run["claims"] if c["status"] != "supported"])
+
+# Verify an answer you already have (e.g. from a closed API)
+review = heatmap.verify_existing("Does this follow the policy?", "Yes, within 90 days.", context="30-day returns.")
 ```
 
-### Trust score and export
+## Local HTTP API
 
-The downloadable `hallucination-heatmap/v1` JSON contains the output, claim verdicts, available token logprobs, evidence alignment, mean token confidence, metric scales, and caveats. The score fields use a 0–100 scale; each token confidence is a 0–1 probability. Where both evidence alignment and token confidence exist, the demo score is:
+| Endpoint | Description |
+| --- | --- |
+| `POST /api/analyze` | Body: `{prompt, context?, mode: "logprobs" \| "verify", existing_response?}`. Requires `Content-Type: application/json`. |
+| `GET /api/health` | `{ok, service, version}` |
+| `GET /api/config` | Non-secret configuration status: model names and sanitized base URLs |
+
+```bash
+curl -s http://localhost:8787/api/analyze \
+  -H 'Content-Type: application/json' \
+  -d '{"prompt": "Can I return a used blender after 60 days?",
+       "context": "Unused items in original packaging: return within 30 days.",
+       "mode": "logprobs"}' | python3 -m json.tool
+```
+
+<details>
+<summary>Response shape</summary>
+
+```jsonc
+{
+  "id": "HM-1A2B3C4D",
+  "output": "Yes, you can return the used blender within 90 days…",
+  "tokens": [{"token": "Yes", "confidence": 0.95, "logprob": -0.05}, …],
+  "claims": [{"claim": "…", "text_span": "…", "status": "contradicted", "confidence": 0.9, "evidence": "…"}],
+  "evidence_score": 18.0,          // 0–100, null without context
+  "mean_token_confidence": 89.4,   // 0–100, null without logprobs
+  "trust_score": 39.4,             // 0–100, null when not source-grounded
+  "score_method": "composite",     // "composite" | "evidence_only" | null
+  "analysis_method": "logprobs",   // "logprobs" | "verifier"
+  "warnings": [],
+  "caveat": "Token confidence is not factual truth. …"
+}
+```
+</details>
+
+### How the score works
 
 ```text
 trust_score = 0.70 × evidence_alignment + 0.30 × mean_token_confidence
 ```
 
-With verifier-only analysis and a supplied context, the UI reports an **evidence-only** score. With no source context, it deliberately leaves a source-grounded trust score unavailable. The weights and cutoffs are exposed for prototyping, not validated calibration; do not treat this score as a universal production gate.
+Claim weights: supported = 1.0, not in source = 0.2, unverified = 0.25, contradicted = 0. Each verdict is pulled toward 0.5 in proportion to the verifier's uncertainty. Without source context, no source-grounded score is produced. These weights and cutoffs are for prototyping and have not been validated. Tune them on your own labelled data.
 
-Color thresholds for actual token logprobs: **red <55%**, **amber 55–84%**, **green ≥85%**. Those colors represent the model's selected-token probability only. The separate claim check is the source-alignment signal.
+## Chrome extension (ChatGPT & Claude)
 
-## Browser extension MVP
+`extension/` is a Manifest V3 extension. It adds an **Analyze answer** button under assistant messages on chatgpt.com and claude.ai. Nothing is read or sent until you click. On click, the response text goes only to your local analyzer (`127.0.0.1:8787`) for a verifier-only review, and claims are highlighted in place with the CSS Custom Highlight API.
 
-The `extension/` folder is a Manifest V3 unpacked Chrome extension. It adds an **Analyze answer** button on matching ChatGPT/Claude assistant messages; it does not read or upload a conversation until the user clicks. On click it sends the selected response text to `http://127.0.0.1:8787` for verifier-only review. Where exact quoted spans map to page text, Chrome's CSS Custom Highlight API adds claim-level colors without rewriting the response DOM.
+1. Run `python3 server.py` with a verifier key configured.
+2. Open `chrome://extensions` and turn on **Developer mode**.
+3. Click **Load unpacked** and select the `extension/` folder.
+4. Refresh ChatGPT or Claude and click **Analyze answer**.
 
-1. Run this app locally and configure a verifier API key.
-2. Visit `chrome://extensions` and enable **Developer mode**.
-3. Choose **Load unpacked** and select `extension/`.
-4. Refresh a ChatGPT or Claude tab and click **Analyze answer** under a response.
+The page selectors are best-effort and can break when either site changes. The extension attaches no source context, so its verdicts are not source-grounded. To lock the API to your extension, set `ALLOWED_EXTENSION_IDS`.
 
-The page selectors are best-effort and can break as either product changes its DOM. No source is attached by this prototype extension, so its verdict is not source-grounded. For anything beyond a local demo, add consent UX, authentication, rate limits, domain review, and a tested provider adapter.
+## Screenshots
 
-## Example screenshots
+| Invented statistics | Fabricated citation |
+| --- | --- |
+| ![Invented statistics: a 240-adult pilot inflated to a 2,400-patient Stanford trial](screenshots/02-invented-statistics.png) | ![Fabricated legal citation flagged as not in source](screenshots/04-fabricated-citation.png) |
+| **Grounded answer** | **Spec drift** |
+| ![Grounded Apollo 11 answer: confidence and evidence agree](screenshots/03-grounded-answer.png) | ![Product spec drift: wrong charge time and wireless charging claim](screenshots/05-spec-drift.png) |
 
-These are illustrative captures of the fixed demo states, not live model runs. The app and backend need no third-party packages; regenerating the PNGs with `tools/render_screenshots.py` additionally requires Pillow (`python3 -m pip install Pillow`).
+<p align="center"><img src="screenshots/mobile.png" alt="Mobile layout" width="260"></p>
 
-### 1. Policy mismatch — confident output, contradicted by the source
+Screenshots are real browser captures of the demo states. Regenerate them with `node tools/capture_screenshots.mjs` (requires Playwright).
 
-![Policy mismatch: 90-day return claim conflicts with the 30-day policy](screenshots/01-policy-mismatch.png)
+## Security
 
-### 2. Invented statistics — plausible details absent from the study summary
+- **Keys stay server-side.** They're read from `.env` (git-ignored), never served or returned by the API.
+- **Localhost by default.** The server binds to `127.0.0.1`. Set `ANALYZER_HOST=0.0.0.0` only on a trusted network, because the API has no user authentication.
+- **DNS-rebinding protection.** API requests must carry a local `Host` header. Add others with `ALLOWED_HOSTS`.
+- **Cross-site request blocking.** Foreign `Origin`s get a 403, and `POST` requires `application/json`, which forces a CORS preflight.
+- **Static allowlist.** Only the web UI files are served. `server.py`, `.env`, tests and `.git` return 404, and directory listings are disabled.
+- **Hardened headers.** Strict Content-Security-Policy (no inline scripts or styles), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy` and `Permissions-Policy`.
+- **Abuse limits.** Per-IP rate limit (`RATE_LIMIT_PER_MINUTE`, default 30), body size caps, and a socket timeout.
+- **Prompt-injection hygiene.** Prompts, context and responses are passed to models as JSON data with an instruction to treat them as untrusted.
+- **No sensitive logging.** Payloads are never logged.
 
-![Invented statistics: unsupported study affiliation and effect sizes](screenshots/02-invented-statistics.png)
+See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
-### 3. Grounded answer — high token likelihood and source support agree
+## Deploying the demo to GitHub Pages
 
-![Grounded Apollo 11 answer](screenshots/03-grounded-answer.png)
+`.github/workflows/pages.yml` publishes the static front end, where the demo library runs fully in the browser. To enable it, go to **Settings → Pages → Build and deployment → Source: GitHub Actions**. Live analysis always needs `server.py` running locally.
 
-## Safety and deployment notes
-
-- `.env` is intentionally not served by the static server. Do not commit real credentials.
-- The server listens on `0.0.0.0` for the workspace preview. It has no user authentication, quota controls, or production-grade access controls. Keep it on a trusted development environment; do not expose it as a public API without adding those controls.
-- Prompt and context data are sent to the configured provider in live mode. Demo mode makes no provider calls.
-- The verifier's source quote and verdict are model-generated. Validate citations and critical decisions independently, especially for legal, medical, financial, or policy-sensitive applications.
-- This repo is a prototype, not an SDK or a certified hallucination detector.
-
-## Tests
+## Development
 
 ```bash
-python3 -m unittest discover -s tests -v
+python3 -m unittest discover -s tests -v   # unit, HTTP security, and end-to-end tests (mock provider)
 node --check app.js
 ```
 
-## Project layout
-
 ```text
-index.html             Browser workbench
-styles.css / app.js    Responsive UI and curated examples
-server.py              Standard-library local API + static server
-heatmap_client.py      Zero-dependency Python client for RAG pipelines
-extension/             Manifest V3 ChatGPT/Claude helper MVP
-screenshots/           Illustrative demo-state PNGs
-tools/                  Screenshot renderer
-.env.example            Safe template (copy to local .env)
-LICENSE                 MIT
+index.html / styles.css / app.js   Browser workbench (vanilla JS, strict CSP)
+server.py                          Standard-library API + static server
+heatmap_client.py                  Zero-dependency Python client
+examples/                          RAG gate, batch eval, curl requests, mock provider
+extension/                         Manifest V3 ChatGPT/Claude helper
+tests/                             unittest suite (no network needed)
+tools/capture_screenshots.mjs      Playwright screenshots, OG image, icons
+assets/ screenshots/               Icons, social card, README images
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [CHANGELOG](CHANGELOG.md).
+
+## License
+
+[MIT](LICENSE) © Yasir Jilani and Hallucination Heatmap contributors.
+
+<sub>Keywords: LLM hallucination detection, token logprobs visualization, RAG evaluation, claim verification, AI fact-checking, LLM observability, trust score, OpenAI logprobs, ChatGPT and Claude answer review.</sub>

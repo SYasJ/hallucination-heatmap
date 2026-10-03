@@ -1,0 +1,5 @@
+{
+  "prompt": "Can I return a used blender after 60 days?",
+  "context": "RETURNS POLICY\nUnused products in original packaging may be returned within 30 days of delivery.\nRefunds are issued 5–7 business days after approval.",
+  "mode": "logprobs"
+}
